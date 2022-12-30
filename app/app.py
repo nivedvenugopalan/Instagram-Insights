@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
-from helpers import parse_raw_data
+from app.helpers import parse_raw_data
+from analysis import DataAnalyzer
 import zipfile
 
 app = Flask(__name__)
@@ -22,7 +23,8 @@ def data_upload():
     zipfile_ = zipfile.ZipFile(file, "r")
     parsed_data = parse_raw_data(zipfile_)
 
-    print(parsed_data)
+    analyzer = DataAnalyzer(parsed_data)
+    print(analyzer.ads_topics_and_viewership.ad_interest(5))
 
     return redirect(url_for('analysis'))
 

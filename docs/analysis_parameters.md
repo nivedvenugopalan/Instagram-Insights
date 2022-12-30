@@ -1,7 +1,8 @@
 # Analysis Parameters
 
 ## Advertiesments & Topics & Viewership
-- Frequency of ads viewed
+- Frequency of ads viewed 🟩
+- Ads Interest 🟨
 - Frequency of X author posts viewed
     - Average time period spent doing
     - Timezone found doing
@@ -9,7 +10,6 @@
     - Average time period spent doing
     - Timezone found doing
 - Your trends (as per the instagram algorithm)
-- Ads Interest
 
 ## Comments
 - Total No. of comments

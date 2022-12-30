@@ -1,5 +1,4 @@
 import json
-import ast
 import zipfile
 
 
@@ -7,6 +6,14 @@ class JsonFile:
     def __init__(self, data, name: str = "") -> None:
         self.data = data
         self.name = name if not "" else None
+
+    def __getitem__(self, __name: str) -> any:
+        print("a")
+        if type(self.data) is not dict:
+            raise LookupError(
+                f"__getattribute__ not available for {type(self.data)} datatype")
+
+        return self.data[__name]
 
 
 class ParsedInstagramData:
