@@ -43,7 +43,7 @@ class DataAnalyzer:
 
             return round(average_frequency, 1)
 
-        def ad_interest(self, n: int) -> list[str]:
+        def ad_interest(self) -> list[str]:
             """Returns a list of categories (`n`), which the 'interests' which the instagram algorithm has sought for you, belong to
 
             Args:
