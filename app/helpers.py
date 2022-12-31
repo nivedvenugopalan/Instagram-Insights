@@ -8,7 +8,6 @@ class JsonFile:
         self.name = name if not "" else None
 
     def __getitem__(self, __name: str) -> any:
-        print("a")
         if type(self.data) is not dict:
             raise LookupError(
                 f"__getattribute__ not available for {type(self.data)} datatype")
@@ -127,7 +126,7 @@ class ParsedInstagramData:
         class _user:
             def __init__(self, username: str, messages: JsonFile) -> None:
                 self.username = username
-                self.messagses = messages
+                self.messages = messages
 
     class _personal_information:
         def __init__(self, profile_changes: JsonFile) -> None:

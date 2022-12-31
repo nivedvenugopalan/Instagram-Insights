@@ -2,20 +2,22 @@
 
 ## Advertiesments & Topics & Viewership
 - Frequency of ads viewed 🟩
-- Ads Interest 🟨
+- Ads Interest 🟩
+- Most Active Hours 🟩
+- Your trends (as per the instagram algorithm) 🟩
 - Frequency of X author posts viewed
     - Average time period spent doing
     - Timezone found doing
 - Frequency of X author reels viewed
     - Average time period spent doing
     - Timezone found doing
-- Your trends (as per the instagram algorithm)
 
 ## Comments
-- Total No. of comments
-- Average comment length
+- Total No. of comments 🟩
+- Average comment length 🟨
 - Most used comment emoji
 - Comment topic
+- Comments per user
 ### Posts
 - Most commented on author
 - Most used word

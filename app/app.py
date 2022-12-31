@@ -24,7 +24,7 @@ def data_upload():
     parsed_data = parse_raw_data(zipfile_)
 
     analyzer = DataAnalyzer(parsed_data)
-    print(analyzer.ads_topics_and_viewership.ad_interest())
+    print(analyzer.comments.average_comment_length())
 
     return redirect(url_for('analysis'))
 
