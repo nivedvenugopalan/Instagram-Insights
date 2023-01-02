@@ -24,7 +24,7 @@ def data_upload():
     parsed_data = parse_raw_data(zipfile_)
 
     analyzer = DataAnalyzer(parsed_data)
-    print(analyzer.comments.average_comment_length())
+    print(analyzer.comments.most_commented_user())
 
     return redirect(url_for('analysis'))
 

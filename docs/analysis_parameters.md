@@ -14,10 +14,13 @@
 
 ## Comments
 - Total No. of comments 🟩
-- Average comment length 🟨
-- Most used comment emoji
+- Average comment length 🟩
+- Total emoji's used 🟥
+- Most used comment emoji 🟥
 - Comment topic
 - Comments per user
+- Average comments per day 🟩
+- Most commented on user 🟩
 ### Posts
 - Most commented on author
 - Most used word

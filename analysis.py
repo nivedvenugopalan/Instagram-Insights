@@ -43,7 +43,7 @@ class DataAnalyzer:
 
             average_frequency = total_ads/len(days)
 
-            return round(average_frequency, 1)
+            return average_frequency
 
         def latest_ad_interest(self, n: int) -> list[str]:
             """Returns a list of latest (`n`) 'ad_interests' which the instagram algorithm has sought for you.
@@ -145,22 +145,77 @@ class DataAnalyzer:
         
     class _comments:
         def __init__(self, comments) -> None:
-            self.comments = comments
+            post_comments = [(block['string_map_data']['Comment']['value'], block['string_map_data']['Time']['value']) for block in comments.post_comments['comments_media_comments']]
+
+            self._post_comments = comments.post_comments
+
+            reel_comments = [(block['string_map_data']['Comment']['value'], block['string_map_data']['Time']['value']) for block in comments.reels_comments['comments_reels_comments']]
+
+            self.comments = post_comments+reel_comments
 
         def total_comments(self) -> int:
             """Returns the total number of comments ever sent by the user."""
-            post_comments_len = len(self.comments.post_comments['comments_media_comments'])
-
-            reel_comments_len = len(self.comments.reels_comments['comments_reels_comments'])
-
-            return (post_comments_len+reel_comments_len)
+            return len(self.comments)
 
         def average_comment_length(self) -> int:
             """Returns the average comment length, int of words."""
-            post_comments = [block['string_map_data']['Comment']['value'] for block in self.comments.post_comments['comments_media_comments']]
 
-            reel_comments = [block['string_map_data']['Comment']['value'] for block in self.comments.reels_comments['comments_reels_comments']]
+            avg_len = sum([len(comment[0]) for comment in self.comments]) / len(self.comments)
 
-            comments = post_comments+reel_comments
+            return avg_len
+        
+        def most_used_emoji(self) -> str:
+            """Returns the emoji most used by the user in comments.
+            
+            WIP"""
+            pass
 
-            print(comments)
+        def total_emojis_used(self) -> int:
+            """Returns the total number of emojis used by the user in comments.
+            
+            WIP"""
+            pass
+            
+        def average_comments_per_day(self) -> int:
+            """Returns the average number of comments per day made by the user.
+            """
+            # Extract dates from time stamps
+            dates = [datetime.strptime(time, r"%d %b %Y, %H:%M").date() for _, time, _ in self.comments]
+
+            # Get the number of unique dates
+            unique_dates = len(set(dates))
+
+            # Calculate the average number of comments per day
+            average_comments_per_day = len(self.comments) / unique_dates
+
+            return average_comments_per_day
+        
+        def most_commented_on_user(self) -> str:
+            """Returns the username of the user, on whose posts the user has commented most."""
+            comments_with_users = [
+                (
+                block['string_map_data']['Comment']['value'], 
+                block['string_map_data'].get('Media Owner', {}).get('value', ''), 
+                block['string_map_data']['Time']['value']
+                )
+                for block in self._post_comments['comments_media_comments']]
+
+            comment_count = {}
+            for _, author, _ in comments_with_users:
+                # if the author is not in the dictionary yet, add them with a count of 0
+                if author == '':
+                    continue
+
+                if author not in comment_count.keys():
+                    comment_count[author] = 0
+                # incerment their count
+                comment_count[author] += 1
+
+            # most commented user
+            most_commented_author = max(comment_count, key=comment_count.get)
+
+            return most_commented_author
+
+            
+
+            
