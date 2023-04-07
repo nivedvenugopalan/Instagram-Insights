@@ -12,6 +12,8 @@ class DataAnalyzer:
 
         self.comments = self._comments(data.comments) 
 
+        self.content = self._content(data.content)
+
     class _ads_topics_and_viewership:
         def __init__(self, ads_and_topics, your_topics, information_about_you, messages) -> None:
             self.ads_and_topics = ads_and_topics
@@ -216,6 +218,48 @@ class DataAnalyzer:
 
             return most_commented_author
 
-            
+    class _content:
+        def __init__(self, content) -> None:
+            self.posts = content.posts
+            self.profile_photos = content.profile_photos
+            self.stories = content.stories
 
+        def total_posts(self) -> int:
+            """Total number of posts made by the user"""
+            return len(self.posts)
+
+        def posts_per_month(self, avg=True) -> dict:
+            """Number of posts per month, as a dictionary with months as keys and the number of posts made in that month as values OR the average no. of posts per month."""
+            months = []
+            for post in self.posts.data:
+                try:
+                    months.append(datetime.fromtimestamp(post['creation_timestamp']).month)
+                except KeyError: # some posts dont have a creation timestamp
+                    # check their images for a approximate creation timestamp
+                    # TODO
+                    pass
             
+            # take the average of all the values
+            return [sum(months)/len(months)] if avg else Counter(months)
+            
+            
+        def no_of_pfp_changes(self) -> int:
+            """No. of times a user has changed their profile picture."""
+            return len(self.profile_photos['ig_profile_picture'])
+
+        def post_types(self) -> dict:
+            """Types of posts (images, videos) based on the file extension of the uploaded posts."""
+            post_types = {"IMAGE":0, "VIDEO":0, "OTHER":0}
+            for post in self.posts.data:
+                media = post['media']
+                for file in media:
+                    extension = file['uri'].split('.')[-1]
+                    if extension in ['jpg', 'jpeg', 'png', 'gif']:
+                        post_types['IMAGE'] += 1
+
+                    elif extension in ['mp4', 'webm', 'mov']:
+                        post_types['VIDEO'] += 1
+
+                    else:
+                        post_types['OTHER'] += 1
+            return post_types

@@ -29,8 +29,8 @@
 - Most used word
 
 ## Posts
-- Total number of posts
-- Post frequency
+- Total number of posts 🟩
+- Post frequency 🟩
 - Post type
 
 ## Stories

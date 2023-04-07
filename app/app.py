@@ -24,7 +24,7 @@ def data_upload():
     parsed_data = parse_raw_data(zipfile_)
 
     analyzer = DataAnalyzer(parsed_data)
-    print(analyzer.comments.most_commented_user())
+    print(analyzer.content.no_of_pfp_changes())
 
     return redirect(url_for('analysis'))
 

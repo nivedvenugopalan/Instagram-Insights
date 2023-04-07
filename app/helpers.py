@@ -7,12 +7,23 @@ class JsonFile:
         self.data = data
         self.name = name if not "" else None
 
+    def __len__(self) -> int:
+        return len(self.data)
+
     def __getitem__(self, __name: str) -> any:
         if type(self.data) is not dict:
             raise LookupError(
                 f"__getattribute__ not available for {type(self.data)} datatype")
 
         return self.data[__name]
+    
+    def __getattr__(self, name: str) -> any:
+        if isinstance(self.data, dict) and name in self.data:
+            return self.data[name]
+        elif isinstance(self.data, list) and name.isdigit() and int(name) < len(self.data):
+            return self.data[int(name)]
+        else:
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
 
 class ParsedInstagramData:
