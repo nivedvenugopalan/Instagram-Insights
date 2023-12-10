@@ -3,7 +3,7 @@ import zipfile
 from flask import Flask, render_template, request, redirect, url_for, session
 from app.helpers import parse_raw_data
 from analysis import DataAnalyzer
-from formatter_ import formatlist
+from formatter_ import formatlist, formatint
 
 app = Flask(__name__)
 
@@ -35,16 +35,21 @@ def data_upload():
 
 @app.route('/analysis')
 def analysis():
+    print(request.headers)
     if 'Referer' not in request.headers or url_for('index') not in request.headers['Referer']:
        return redirect(url_for('index'))
 
     analyzed_data = session.get('analyzed_data', None) # retrieve the analyzer object from the session
-
+    
     formatted_data = {
         ## ads, topics, and viewership
-       'ad_view_freq': analyzed_data['ad_view_freq'],
+       'ad_view_freq': formatint(analyzed_data['ad_view_freq'], round_=0),
        'account_based_in': analyzed_data['account_based_in'],
        'possible_phone_numbers': formatlist(analyzed_data['possible_phone_numbers']),
+       'latest_topics': formatlist(analyzed_data['your_topics']),
+       'most_common_activity': analyzed_data['most_common_activity'],
+
+        ## content
     }
 
     return render_template(

@@ -3,7 +3,6 @@ from datetime import datetime
 from collections import Counter
 from app.helpers import ParsedInstagramData
 
-
 class DataAnalyzer:
     """Contains functions to analyze the instagram data, from the ParsedInstagramData class."""
 
@@ -28,11 +27,15 @@ class DataAnalyzer:
         ad_view_freq = self.ads_topics_and_viewership.ad_view_freq()
         account_based_in = self.ads_topics_and_viewership.account_based_in()
         possible_phone_numbers = self.ads_topics_and_viewership.possible_phone_numbers()
+        your_topics = self.ads_topics_and_viewership.latest_topics(n=None)
+        most_common_activity = self.ads_topics_and_viewership.most_common_activity()
 
         return {
             'ad_view_freq': ad_view_freq,
             'account_based_in': account_based_in,
-            'possible_phone_numbers': possible_phone_numbers
+            'possible_phone_numbers': possible_phone_numbers,
+            'your_topics': your_topics,
+            'most_common_activity': most_common_activity,
         }
 
     class _ads_topics_and_viewership:
@@ -95,92 +98,35 @@ class DataAnalyzer:
 
             return topics[-n:] if n is not None else topics
 
-        def most_active_hours(self) -> int:
-            """Returns an int, which specifies the start interval of a one hour period, 
-            where the user has been active the most."""
-            # weights
-            weights = {"posts": 3, "reels": 2.5, "ads": 0.5, "messages": 0.05}
+        def most_common_activity(self) -> int:
+            """Returns the zone across which the user has been most active."""
 
-            # get list of times for posts and reels viewed
-            ad_view_times = [
-                block["string_map_data"]["Time"]["timestamp"]
-                for block in self.ads_and_topics.ads_viewed[
-                    "impressions_history_ads_seen"
+            def get_view_times(data, key):
+                return [
+                    datetime.fromtimestamp(int(block["string_map_data"]["Time"]["timestamp"]))
+                    for block in data[key]
                 ]
-            ]
 
-            post_view_times = [
-                block["string_map_data"]["Time"]["timestamp"]
-                for block in self.ads_and_topics.posts_viewed[
-                    "impressions_history_posts_seen"
-                ]
-            ]
+            post_view_times = get_view_times(self.ads_and_topics.posts_viewed, "impressions_history_posts_seen")
+            reel_view_times = get_view_times(self.ads_and_topics.videos_watched, "impressions_history_videos_watched")
 
-            reel_view_times = [
-                block["string_map_data"]["Time"]["timestamp"]
-                for block in self.ads_and_topics.videos_watched[
-                    "impressions_history_videos_watched"
-                ]
-            ]
-
-            # convert into datetime objects
-            ad_view_times = [
-                datetime.strptime(x, r"%d %b %Y, %H:%M") for x in ad_view_times
-            ]
-
-            post_view_times = [
-                datetime.strptime(x, r"%d %b %Y, %H:%M") for x in post_view_times
-            ]
-
-            reel_view_times = [
-                datetime.strptime(x, r"%d %b %Y, %H:%M") for x in reel_view_times
-            ]
 
             # message view times
             message_view_times = []
-            for chat in self.messages.inbox:
-                messages = chat.messages["messages"]
+            for userchat in self.messages.inbox:
+                messages = userchat.messages["messages"]
                 times = [
                     datetime.fromtimestamp(int(message["timestamp_ms"]) / 1000)
                     for message in messages
                 ]
                 message_view_times.extend(times)
 
-            hour_count = {}
-            interval_size = 1
+            # posts_per_min_ = Counter(post_view_times, key=lambda t: t.minute)
 
-            # ad times
-            for time in ad_view_times:
-                interval = time.hour // interval_size * interval_size
-                if interval not in hour_count.keys():
-                    hour_count[interval] = 0
-                hour_count[interval] += weights["ads"]
+            # TODO
 
-            # post time
-            for time in post_view_times:
-                interval = time.hour // interval_size * interval_size
-                if interval not in hour_count.keys():
-                    hour_count[interval] = 0
-                hour_count[interval] += weights["posts"]
-
-            # reel times
-            for time in reel_view_times:
-                interval = time.hour // interval_size * interval_size
-                if interval not in hour_count.keys():
-                    hour_count[interval] = 0
-                hour_count[interval] += weights["reels"]
-
-            # message view times
-            for time in message_view_times:
-                interval = time.hour // interval_size * interval_size
-                if interval not in hour_count.keys():
-                    hour_count[interval] = 0
-                hour_count[interval] += weights["messages"]
-
-            # find interval with maximum activity
-            most_active_interval = max(hour_count, key=hour_count.get)
-
-            return most_active_interval
+            # find messaging speed, average posts per minute and average reels per minute
+            return None
 
     class _comments:
         def __init__(self, comments) -> None:
