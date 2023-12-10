@@ -11,7 +11,7 @@ class JsonFile:
         return len(self.data)
 
     def __getitem__(self, __name: str) -> any:
-        if type(self.data) is not dict:
+        if not isinstance(self.data, dict):
             raise LookupError(
                 f"__getattribute__ not available for {type(self.data)} datatype")
 
@@ -27,7 +27,7 @@ class JsonFile:
 
 
 class ParsedInstagramData:
-    def __init__(self, ads_viewed: JsonFile, posts_viewed: JsonFile, videos_watched: JsonFile, post_comments: JsonFile, reels_comments: JsonFile, posts: JsonFile, profile_photos: JsonFile, stories: JsonFile, camera_information: JsonFile, devices: JsonFile, blocked_accounts: JsonFile, close_friends: JsonFile, followers: JsonFile, following: JsonFile, ads_interest: JsonFile, liked_comments: JsonFile, liked_posts: JsonFile, login_activity: JsonFile, logout_activity: JsonFile, password_change_activity: JsonFile, message_data: list[(str, JsonFile)], profile_changes: JsonFile, account_searches: JsonFile, word_or_phrase_searches: JsonFile, saved_collections: JsonFile, saved_posts: JsonFile, emoji_sliders: JsonFile, polls: JsonFile, questions: JsonFile, quizzes: JsonFile, story_likes: JsonFile, your_topics: JsonFile) -> None:
+    def __init__(self, ads_viewed: JsonFile, posts_viewed: JsonFile, videos_watched: JsonFile, post_comments: JsonFile, reels_comments: JsonFile, posts: JsonFile, profile_photos: JsonFile, stories: JsonFile, camera_information: JsonFile, devices: JsonFile, blocked_accounts: JsonFile, close_friends: JsonFile, followers: JsonFile, following: JsonFile, account_based_in:JsonFile, possible_phone_numbers:JsonFile, liked_comments: JsonFile, liked_posts: JsonFile, login_activity: JsonFile, logout_activity: JsonFile, password_change_activity: JsonFile, message_data: list[(str, JsonFile)], profile_changes: JsonFile, account_searches: JsonFile, word_or_phrase_searches: JsonFile, saved_collections: JsonFile, saved_posts: JsonFile, emoji_sliders: JsonFile, polls: JsonFile, questions: JsonFile, quizzes: JsonFile, story_likes: JsonFile, your_topics: JsonFile) -> None:
         # ads_and_topics
         self.ads_and_topics = self._ads_and_topics(
             ads_viewed, posts_viewed, videos_watched)
@@ -47,7 +47,7 @@ class ParsedInstagramData:
             blocked_accounts, close_friends, followers, following)
 
         # information about you
-        self.information_about_you = self._information_about_you(ads_interest)
+        self.information_about_you = self._information_about_you(account_based_in, possible_phone_numbers)
 
         # likes
         self.likes = self._likes(liked_comments, liked_posts)
@@ -108,8 +108,9 @@ class ParsedInstagramData:
             self.following = following
 
     class _information_about_you:
-        def __init__(self, ads_interest: JsonFile) -> None:
-            self.ads_interest = ads_interest
+        def __init__(self, account_based_in: JsonFile, possible_phone_numbers:JsonFile) -> None:
+            self.account_based_in = account_based_in
+            self.possible_phone_numbers = possible_phone_numbers
 
     class _likes:
         def __init__(self, liked_comments: JsonFile, liked_posts: JsonFile) -> None:
@@ -192,7 +193,7 @@ def parse_raw_data(archive: zipfile.ZipFile):
         videos_watched=parse_json_bytes(archive.read(
             'ads_and_topics/videos_watched.json')),
         post_comments=parse_json_bytes(
-            archive.read('comments/post_comments.json')),
+            archive.read('comments/post_comments_1.json')),
         reels_comments=parse_json_bytes(
             archive.read('comments/reels_comments.json')),
         posts=parse_json_bytes(
@@ -210,11 +211,13 @@ def parse_raw_data(archive: zipfile.ZipFile):
         close_friends=parse_json_bytes(archive.read(
             'followers_and_following/close_friends.json')),
         followers=parse_json_bytes(archive.read(
-            'followers_and_following/followers.json')),
+            'followers_and_following/followers_1.json')),
         following=parse_json_bytes(archive.read(
             'followers_and_following/following.json')),
-        ads_interest=parse_json_bytes(archive.read(
-            'information_about_you/ads_interests.json')),
+        account_based_in=parse_json_bytes(archive.read(
+            'information_about_you/account_based_in.json')),
+        possible_phone_numbers=parse_json_bytes(archive.read(
+            'information_about_you/possible_phone_numbers.json')),
         liked_comments=parse_json_bytes(
             archive.read('likes/liked_comments.json')),
         liked_posts=parse_json_bytes(archive.read('likes/liked_posts.json')),
