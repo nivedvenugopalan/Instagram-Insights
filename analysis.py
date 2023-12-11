@@ -1,7 +1,11 @@
 """Analysis of Data"""
+import emoji
+import re
+
 from datetime import datetime
 from collections import Counter
 from app.helpers import ParsedInstagramData
+
 
 class DataAnalyzer:
     """Contains functions to analyze the instagram data, from the ParsedInstagramData class."""
@@ -28,14 +32,28 @@ class DataAnalyzer:
         account_based_in = self.ads_topics_and_viewership.account_based_in()
         possible_phone_numbers = self.ads_topics_and_viewership.possible_phone_numbers()
         your_topics = self.ads_topics_and_viewership.latest_topics(n=None)
-        most_common_activity = self.ads_topics_and_viewership.most_common_activity()
+        most_common_activity = None # TODO
+
+        # comments
+        total_comments = self.comments.total_comments()
+        total_accounts_commented_on = self.comments.total_accounts_commented_on()
+        total_post_comments = self.comments.total_post_comments()
+        total_reel_comments = self.comments.total_reel_comments()
+        most_used_emoji, most_used_emoji_count = self.comments.most_used_emoji()
 
         return {
+            # ads, topics & viewership
             'ad_view_freq': ad_view_freq,
             'account_based_in': account_based_in,
             'possible_phone_numbers': possible_phone_numbers,
             'your_topics': your_topics,
             'most_common_activity': most_common_activity,
+
+            # comments
+            "total_comments": total_comments,
+            "total_accounts_commented_on": total_accounts_commented_on,
+            "total_post_comments": total_post_comments,
+            "total_reel_comments": total_reel_comments,
         }
 
     class _ads_topics_and_viewership:
@@ -130,30 +148,60 @@ class DataAnalyzer:
 
     class _comments:
         def __init__(self, comments) -> None:
-            post_comments = [
-                (
-                    block["string_map_data"]["Comment"]["value"],
-                    block["string_map_data"]["Time"]["timestamp"],
+            self.post_comments = []
+            for comment in comments.post_comments.data:
+                # get the media owner
+                media_owner = comment["string_map_data"].get("Media Owner", {}).get("value", None)
+
+                if isinstance(media_owner, dict):
+                    media_owner = None
+
+                # decode all unicode emojis
+                comment_ = ["string_map_data"]["Comment"]["value"]
+                for word in comment_.split(" "):
+                    # if it contains \u, extract from that part until the last \u and add 4 characters
+                    if "\u" in word:
+                        word = word.split("\u")[0] + "\u" + word.split("\u")[-1][:4]
+
+                self.post_comments.append(
+                    {
+                        'comment': comment_,
+                        'media_owner': media_owner,
+                        'timestamp': comment["string_map_data"]["Time"]["timestamp"],
+                    }
                 )
-                for block in comments.post_comments.data
-            ]
 
-            self._post_comments = comments.post_comments
 
-            reel_comments = [
-                (
-                    block["string_map_data"]["Comment"]["value"],
-                    block["string_map_data"]["Time"]["timestamp"],
+            self.reel_comments = []
+            for comment in comments.reels_comments.data['comments_reels_comments']:
+                media_owner = comment["string_map_data"].get("Media Owner", {}).get("value", None)
+
+                self.reel_comments.append(
+                    {
+                        'comment': comment["string_map_data"]["Comment"]["value"],
+                        'media_owner': media_owner,
+                        'timestamp': comment["string_map_data"]["Time"]["timestamp"],
+                    }
                 )
-                for block in comments.reels_comments["comments_reels_comments"]
-            ]
 
-            self.comments = post_comments + reel_comments
+            self.comments = self.post_comments + self.reel_comments
 
         def total_comments(self) -> int:
             """Returns the total number of comments ever sent by the user."""
             return len(self.comments)
 
+        def total_accounts_commented_on(self) -> int:
+            """Returns the total number of accounts commented on."""
+            return len({comment['media_owner'] for comment in self.comments})
+        
+        def total_post_comments(self) -> int:
+            """Returns the total number of post comments."""
+            return len(self.post_comments)
+        
+        def total_reel_comments(self) -> int:
+            """Returns the total number of reel comments."""
+            return len(self.reel_comments)
+            
         def average_comment_length(self) -> int:
             """Returns the average comment length, int of words."""
 
@@ -163,10 +211,26 @@ class DataAnalyzer:
 
             return avg_len
 
-        def most_used_emoji(self) -> str:
-            """Returns the emoji most used by the user in comments.
+        def _get_all_comments(self) -> list[str]:
+            """Returns a list of all comments made by the user."""
+            return [comment['comment'] for comment in self.comments]
 
-            WIP"""
+        def most_used_emoji(self) -> (str, int):
+            """Returns the emoji most used by the user in comments, how many times
+            """
+            comments = self._get_all_comments()
+            emojis_ = []
+            for comment in comments:
+                de_emojized = emoji.demojize(comment)
+                print(de_emojized)
+                
+                emojis_.extend(
+                    [c for c in comments if emoji.is_emoji(c)]
+                )
+            print(emojis_)
+
+            return "", 0
+
 
         def total_emojis_used(self) -> int:
             """Returns the total number of emojis used by the user in comments.

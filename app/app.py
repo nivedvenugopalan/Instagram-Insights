@@ -37,19 +37,26 @@ def data_upload():
 def analysis():
     print(request.headers)
     if 'Referer' not in request.headers or url_for('index') not in request.headers['Referer']:
-       return redirect(url_for('index'))
+        return redirect(url_for('index'))
 
     analyzed_data = session.get('analyzed_data', None) # retrieve the analyzer object from the session
+
+    if analyzed_data is None:
+        return redirect(url_for('index')) # redirect to index if the analyzer object is not found in the session
     
     formatted_data = {
         ## ads, topics, and viewership
-       'ad_view_freq': formatint(analyzed_data['ad_view_freq'], round_=0),
+       'ad_view_freq': formatint(analyzed_data['ad_view_freq']),
        'account_based_in': analyzed_data['account_based_in'],
        'possible_phone_numbers': formatlist(analyzed_data['possible_phone_numbers']),
        'latest_topics': formatlist(analyzed_data['your_topics']),
        'most_common_activity': analyzed_data['most_common_activity'],
 
-        ## content
+       ## comments
+       'total_comments': formatint(analyzed_data['total_comments']),
+       'total_accounts_commented_on': formatint(analyzed_data['total_accounts_commented_on']),
+       'total_post_comments': formatint(analyzed_data['total_post_comments']),
+       'total_reel_comments': formatint(analyzed_data['total_reel_comments']),
     }
 
     return render_template(
