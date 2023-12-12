@@ -4,7 +4,7 @@ import re
 
 from datetime import datetime
 from collections import Counter
-from app.helpers import ParsedInstagramData
+from helpers import ParsedInstagramData
 
 
 class DataAnalyzer:
@@ -39,21 +39,40 @@ class DataAnalyzer:
         total_accounts_commented_on = self.comments.total_accounts_commented_on()
         total_post_comments = self.comments.total_post_comments()
         total_reel_comments = self.comments.total_reel_comments()
-        most_used_emoji, most_used_emoji_count = self.comments.most_used_emoji()
+        average_comments_per_day = self.comments.average_comments_per_day()
+        most_commented_on_user = self.comments.most_commented_on_user()
+
+        ## content
+        total_posts = self.content.total_posts()
+        posts_per_month = self.content.posts_per_month()
+        no_of_pfp_changes = self.content.no_of_pfp_changes()
+        post_types = self.content.post_types()
 
         return {
-            # ads, topics & viewership
-            'ad_view_freq': ad_view_freq,
-            'account_based_in': account_based_in,
-            'possible_phone_numbers': possible_phone_numbers,
-            'your_topics': your_topics,
-            'most_common_activity': most_common_activity,
+            'ads_topics_viewsership' : {
+                # ads, topics & viewership
+                'ad_view_freq': ad_view_freq,
+                'account_based_in': account_based_in,
+                'possible_phone_numbers': possible_phone_numbers,
+                'your_topics': your_topics,
+                'most_common_activity': most_common_activity,
+            },
 
-            # comments
-            "total_comments": total_comments,
-            "total_accounts_commented_on": total_accounts_commented_on,
-            "total_post_comments": total_post_comments,
-            "total_reel_comments": total_reel_comments,
+            'comments': {
+                "total_comments": total_comments,
+                "total_accounts_commented_on": total_accounts_commented_on,
+                "total_post_comments": total_post_comments,
+                "total_reel_comments": total_reel_comments,
+                "average_comments_per_day": average_comments_per_day,
+                'most_commented_on_user': most_commented_on_user,
+            },
+
+            'content': {
+                'total_posts': total_posts,
+                'posts_per_month': posts_per_month,
+                'no_of_pfp_changes': no_of_pfp_changes,
+                'post_types': post_types,
+            }
         }
 
     class _ads_topics_and_viewership:
@@ -157,11 +176,7 @@ class DataAnalyzer:
                     media_owner = None
 
                 # decode all unicode emojis
-                comment_ = ["string_map_data"]["Comment"]["value"]
-                for word in comment_.split(" "):
-                    # if it contains \u, extract from that part until the last \u and add 4 characters
-                    if "\u" in word:
-                        word = word.split("\u")[0] + "\u" + word.split("\u")[-1][:4]
+                comment_ = comment["string_map_data"]["Comment"]["value"]
 
                 self.post_comments.append(
                     {
@@ -217,19 +232,9 @@ class DataAnalyzer:
 
         def most_used_emoji(self) -> (str, int):
             """Returns the emoji most used by the user in comments, how many times
-            """
-            comments = self._get_all_comments()
-            emojis_ = []
-            for comment in comments:
-                de_emojized = emoji.demojize(comment)
-                print(de_emojized)
-                
-                emojis_.extend(
-                    [c for c in comments if emoji.is_emoji(c)]
-                )
-            print(emojis_)
 
-            return "", 0
+            WIP
+            """
 
 
         def total_emojis_used(self) -> int:
@@ -241,8 +246,7 @@ class DataAnalyzer:
             """Returns the average number of comments per day made by the user."""
             # Extract dates from time stamps
             dates = [
-                datetime.strptime(time, r"%d %b %Y, %H:%M").date()
-                for _, time, _ in self.comments
+                datetime.fromtimestamp(comment['timestamp']) for comment in self.comments 
             ]
 
             # Get the number of unique dates
@@ -253,32 +257,15 @@ class DataAnalyzer:
 
             return average_comments_per_day
 
-        def most_commented_on_user(self) -> str:
-            """Returns the username of the user, on whose posts the user has commented most."""
-            comments_with_users = [
-                (
-                    block["string_map_data"]["Comment"]["value"],
-                    block["string_map_data"].get("Media Owner", {}).get("value", ""),
-                    block["string_map_data"]["Time"]["timestamp"],
-                )
-                for block in self._post_comments["comments_media_comments"]
-            ]
+        def most_commented_on_user(self) -> (str, int):
+            """Returns the username of the user, on whose posts the user has commented most along with the number of comments."""
+            count = Counter(
+                [comment["media_owner"] for comment in self.comments]
+            )
+            
+            common = count.most_common(n=1)[0]
 
-            comment_count = {}
-            for _, author, _ in comments_with_users:
-                # if the author is not in the dictionary yet, add them with a count of 0
-                if author == "":
-                    continue
-
-                if author not in comment_count.keys():
-                    comment_count[author] = 0
-                # incerment their count
-                comment_count[author] += 1
-
-            # most commented user
-            most_commented_author = max(comment_count, key=comment_count.get)
-
-            return most_commented_author
+            return common if common[0] is not None else ("", 0)
 
     class _content:
         def __init__(self, content) -> None:
