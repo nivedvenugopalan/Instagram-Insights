@@ -1,5 +1,6 @@
 import json
 import zipfile
+import pandas as pd
 
 
 class JsonFile:
@@ -27,7 +28,7 @@ class JsonFile:
 
 
 class ParsedInstagramData:
-    def __init__(self, ads_viewed: JsonFile, posts_viewed: JsonFile, videos_watched: JsonFile, post_comments: JsonFile, reels_comments: JsonFile, posts: JsonFile, profile_photos: JsonFile, stories: JsonFile, camera_information: JsonFile, devices: JsonFile, blocked_accounts: JsonFile, close_friends: JsonFile, followers: JsonFile, following: JsonFile, account_based_in:JsonFile, possible_phone_numbers:JsonFile, liked_comments: JsonFile, liked_posts: JsonFile, login_activity: JsonFile, logout_activity: JsonFile, password_change_activity: JsonFile, message_data: list[(str, JsonFile)], profile_changes: JsonFile, account_searches: JsonFile, word_or_phrase_searches: JsonFile, saved_collections: JsonFile, saved_posts: JsonFile, emoji_sliders: JsonFile, polls: JsonFile, questions: JsonFile, quizzes: JsonFile, story_likes: JsonFile, your_topics: JsonFile) -> None:
+    def __init__(self, ads_viewed: JsonFile, posts_viewed: JsonFile, videos_watched: JsonFile, post_comments: JsonFile, reels_comments: JsonFile, posts: JsonFile, profile_photos: JsonFile, stories: JsonFile, camera_information: JsonFile, devices: JsonFile, accounts_favorited:JsonFile, blocked_accounts: JsonFile, close_friends: JsonFile, followers: JsonFile, following: JsonFile, account_based_in:JsonFile, possible_phone_numbers:JsonFile, liked_comments: JsonFile, liked_posts: JsonFile, login_activity: JsonFile, logout_activity: JsonFile, password_change_activity: JsonFile, message_data: list[(str, JsonFile)], profile_changes: JsonFile, account_searches: JsonFile, word_or_phrase_searches: JsonFile, saved_collections: JsonFile, saved_posts: JsonFile, emoji_sliders: JsonFile, polls: JsonFile, questions: JsonFile, quizzes: JsonFile, story_likes: JsonFile, your_topics: JsonFile) -> None:
         # ads_and_topics
         self.ads_and_topics = self._ads_and_topics(
             ads_viewed, posts_viewed, videos_watched)
@@ -43,8 +44,7 @@ class ParsedInstagramData:
             camera_information, devices)
 
         # follwers and following
-        self.followers_and_following = self._followers_and_following(
-            blocked_accounts, close_friends, followers, following)
+        self.followers_and_following = self._followers_and_following(accounts_favorited,blocked_accounts, close_friends, followers, following)
 
         # information about you
         self.information_about_you = self._information_about_you(account_based_in, possible_phone_numbers)
@@ -101,7 +101,8 @@ class ParsedInstagramData:
             self.devices = devices
 
     class _followers_and_following:
-        def __init__(self, blocked_accounts: JsonFile, close_friends: JsonFile, followers: JsonFile, following: JsonFile) -> None:
+        def __init__(self, accounts_favorited:JsonFile, blocked_accounts: JsonFile, close_friends: JsonFile, followers: JsonFile, following: JsonFile) -> None:
+            self.accounts_favorited = accounts_favorited
             self.blocked_accounts = blocked_accounts
             self.close_friends = close_friends
             self.followers = followers
@@ -206,6 +207,7 @@ def parse_raw_data(archive: zipfile.ZipFile):
             'device_information/camera_information.json')),
         devices=parse_json_bytes(archive.read(
             'device_information/devices.json')),
+        accounts_favorited=parse_json_bytes(archive.read("followers_and_following/accounts_you've_favorited.json")),
         blocked_accounts=parse_json_bytes(archive.read(
                                           'followers_and_following/blocked_accounts.json')),
         close_friends=parse_json_bytes(archive.read(
@@ -258,3 +260,19 @@ def parse_json_bytes(jsonbytes: bytes):
     rtn = json.loads(jsonbytes)
     rtn = JsonFile(data=rtn)
     return rtn
+
+def average_timestamps(timestamps, key):
+    # Convert epoch timestamps to datetime
+    dates = pd.to_datetime(timestamps, unit='s')
+
+    # Group by the specified key
+    grouped = dates.groupby(dates.map(lambda x: getattr(x, key)))
+
+    dict_lengths = [len(key_block) for key_block in grouped.values()]
+    print(dict_lengths)
+    
+    return sum(dict_lengths) / len(dict_lengths)
+
+
+def fix_emojis(string: str):
+    return string.encode('latin-1').decode('utf-8')

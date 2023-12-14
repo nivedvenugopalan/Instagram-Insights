@@ -1,10 +1,9 @@
 """Analysis of Data"""
 import emoji
-import re
 
 from datetime import datetime
 from collections import Counter
-from helpers import ParsedInstagramData
+from helpers import ParsedInstagramData, fix_emojis, average_timestamps
 
 
 class DataAnalyzer:
@@ -24,6 +23,10 @@ class DataAnalyzer:
 
         self.content = self._content(data.content)
 
+        self.device_information = self._device_information(data.device_information)
+
+        self.followers_and_following = self._followers_and_following(data.followers_and_following)
+
     def export(self) -> dict:
         """Exports all the analyzed data into a dict."""
 
@@ -41,12 +44,32 @@ class DataAnalyzer:
         total_reel_comments = self.comments.total_reel_comments()
         average_comments_per_day = self.comments.average_comments_per_day()
         most_commented_on_user = self.comments.most_commented_on_user()
+        total_emojis_used = self.comments.total_emojis_used()
+        most_used_emoji = self.comments.most_used_emoji()
 
         ## content
         total_posts = self.content.total_posts()
         posts_per_month = self.content.posts_per_month()
         no_of_pfp_changes = self.content.no_of_pfp_changes()
         post_types = self.content.post_types()
+        no_of_stories = self.content.no_of_stories()
+        average_stories_per_day = self.content.average_stories_per_day()
+        no_of_reels_shared_on_story = self.content.no_of_reels_shared_on_story()
+
+        ## device information
+        last_device_logged_onto = self.device_information.last_device_logged_onto()
+
+        ## followers and following
+        favorite_followers = self.followers_and_following.favorite_followers()
+        no_of_blocked_users = self.followers_and_following.no_of_blocked_users()
+        no_of_close_friends = self.followers_and_following.no_of_close_friends()
+        close_friends = self.followers_and_following.close_friends_list()
+        no_of_followers = self.followers_and_following.no_of_followers()
+        earliest_follower = self.followers_and_following.earliest_follower()
+        latest_follower = self.followers_and_following.latest_follower()
+        no_of_following = self.followers_and_following.no_of_following()
+        earliest_following = self.followers_and_following.earliest_following()
+        latest_following = self.followers_and_following.latest_following()
 
         return {
             'ads_topics_viewsership' : {
@@ -65,6 +88,8 @@ class DataAnalyzer:
                 "total_reel_comments": total_reel_comments,
                 "average_comments_per_day": average_comments_per_day,
                 'most_commented_on_user': most_commented_on_user,
+                'total_emojis_used': total_emojis_used,
+                'most_used_emojis': most_used_emoji
             },
 
             'content': {
@@ -72,6 +97,26 @@ class DataAnalyzer:
                 'posts_per_month': posts_per_month,
                 'no_of_pfp_changes': no_of_pfp_changes,
                 'post_types': post_types,
+                'no_of_stories': no_of_stories,
+                'average_stories_per_day': average_stories_per_day,
+                'no_of_reels_shared_on_story': no_of_reels_shared_on_story,
+            },
+            
+            'device_information': {
+                'last_device_logged_onto': last_device_logged_onto
+            },
+
+            'followers_and_following': {
+                'favorite_followers': favorite_followers,
+                'no_of_blocked_users': no_of_blocked_users,
+                'no_of_close_friends': no_of_close_friends,
+                'close_friends': close_friends,
+                'no_of_followers': no_of_followers,
+                'earliest_follower': earliest_follower,
+                'latest_follower': latest_follower,
+                'no_of_following': no_of_following,
+                'earliest_following': earliest_following,
+                'latest_following': latest_following
             }
         }
 
@@ -90,26 +135,13 @@ class DataAnalyzer:
             """Returns the frequency of ads seen per day."""
 
             # times the user has seen an ad
-            datetimes = []
+            timestamps = []
             for block in self.ads_and_topics.ads_viewed["impressions_history_ads_seen"]:
                 # time in format date month year, 24h:min
                 timestamp = block["string_map_data"]["Time"]["timestamp"]
-                datetimes.append(datetime.fromtimestamp(timestamp))
+                timestamps.append(timestamp)
 
-            # Group the datetime objects by day
-            days = {}
-            for dt in datetimes:
-                day = dt.date()
-                if day not in days:
-                    days[day] = []
-                days[day].append(dt)
-
-            # Calculate the total number of ads seen
-            total_ads = sum([len(times) for times in days.values()])
-
-            average_frequency = total_ads / len(days)
-
-            return average_frequency
+            return average_timestamps(timestamps, key='day')
 
         def account_based_in(self) -> str:
             """Returns city from which account is based in"""
@@ -177,6 +209,7 @@ class DataAnalyzer:
 
                 # decode all unicode emojis
                 comment_ = comment["string_map_data"]["Comment"]["value"]
+                comment_ = fix_emojis(comment_)
 
                 self.post_comments.append(
                     {
@@ -232,15 +265,25 @@ class DataAnalyzer:
 
         def most_used_emoji(self) -> (str, int):
             """Returns the emoji most used by the user in comments, how many times
-
-            WIP
             """
+
+            emojis = []
+            for comment in self.comments:
+                string = comment['comment']
+                emojis.extend(
+                    emoji.demojize(token.chars) for token in emoji.analyze(string)
+                )
+            
+            top = Counter(emojis).most_common(n=1)[0]
+            return top if top[0] is not None else ("", 0)
 
 
         def total_emojis_used(self) -> int:
             """Returns the total number of emojis used by the user in comments.
+            """
+            counts = [emoji.emoji_count(comment['comment']) for comment in self.comments]
 
-            WIP"""
+            return sum(counts)
 
         def average_comments_per_day(self) -> int:
             """Returns the average number of comments per day made by the user."""
@@ -271,7 +314,7 @@ class DataAnalyzer:
         def __init__(self, content) -> None:
             self.posts = content.posts
             self.profile_photos = content.profile_photos
-            self.stories = content.stories
+            self.stories = content.stories['ig_stories']
 
         def total_posts(self) -> int:
             """Total number of posts made by the user"""
@@ -313,3 +356,89 @@ class DataAnalyzer:
                     else:
                         post_types["OTHER"] += 1
             return post_types
+
+        def no_of_stories(self) -> int:
+            """No. of stories the user has created."""
+            return len(self.stories)
+        
+        def average_stories_per_day(self) -> int:
+            """Average no. of stories per day the user has created."""
+            timestamps = [story['creation_timestamp'] for story in self.stories]
+
+            return average_timestamps(timestamps, key='day')
+        
+        def no_of_reels_shared_on_story(self) -> int:
+            """No. of reels the user has shared."""
+            count = 0
+            for story in self.stories:
+                try:
+                    if story['media_metadata']['video_metadata']['exif_data'][0]['source_type'] == 'feed_reshare':
+                        count += 1
+                except KeyError as e:
+                    if e == 'video_metadata':
+                        pass
+                
+            return count
+        
+    class _device_information:
+        def __init__(self, device_information) -> None:
+            self.camera_information = device_information.camera_information
+            self.devices = device_information.devices
+
+        def last_device_logged_onto(self) -> str:
+            return sorted(self.devices['devices_devices'], key=lambda x: x['string_map_data']['Last Login']['timestamp'], reverse=True)[0]['string_map_data']['User Agent']['value']
+        
+    class _followers_and_following:
+        def __init__(self, followers_and_following) -> None:
+            
+            self.accounts_favorited = followers_and_following.accounts_favorited
+            self.blocked_accounts = followers_and_following.blocked_accounts
+            self.close_friends = followers_and_following.close_friends
+            self.followers = followers_and_following.followers
+            self.following = followers_and_following.following
+            
+        def favorite_followers(self) -> list[str]:
+            """Returns a list of the favorite followers of the user."""
+            return [
+                account["string_list_data"][0]['value']
+                for account in self.accounts_favorited['relationships_feed_favorites']
+            ]
+        
+        def no_of_blocked_users(self) -> int:
+            """Returns the number of blocked users."""
+            return len(self.blocked_accounts['relationships_blocked_users'])
+        
+        def no_of_close_friends(self) -> int:
+            """Returns the number of close friends."""
+            return len(self.close_friends['relationships_close_friends'])
+        
+        def close_friends_list(self) -> list[str]:
+            """Returns a list of the close friends of the user."""
+            return [
+                account["string_list_data"][0]['value']
+                for account in self.close_friends['relationships_close_friends']
+            ]
+        
+        def no_of_followers(self) -> int:
+            """Returns the number of followers."""
+            return len(self.followers)
+        
+        def earliest_follower(self) -> str:
+            """Returns the username of the earliest follower."""
+            return sorted(self.followers, key=lambda x: x['string_list_data'][0]['timestamp'])[0]['string_list_data'][0]['value']
+        
+        def latest_follower(self) -> str:
+            """Returns the username of the latest follower."""
+            return sorted(self.followers, key=lambda x: x['string_list_data'][0]['timestamp'], reverse=True)[0]['string_list_data'][0]['value'] 
+        
+        def no_of_following(self) -> int:
+            """Returns the number of following."""
+            return len(self.following["relationships_following"])
+        
+        def earliest_following(self) -> str:
+            """Returns the username of the earliest following."""
+            return sorted(self.following["relationships_following"], key=lambda x: x['string_list_data'][0]['timestamp'])[0]['string_list_data'][0]['value']
+        
+        def latest_following(self) -> str:
+            """Returns the username of the latest following."""
+            return sorted(self.following["relationships_following"], key=lambda x: x['string_list_data'][0]['timestamp'], reverse=True)[0]['string_list_data'][0]['value']
