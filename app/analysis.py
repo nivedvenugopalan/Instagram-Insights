@@ -65,11 +65,12 @@ class DataAnalyzer:
         no_of_close_friends = self.followers_and_following.no_of_close_friends()
         close_friends = self.followers_and_following.close_friends_list()
         no_of_followers = self.followers_and_following.no_of_followers()
-        earliest_follower = self.followers_and_following.earliest_follower()
-        latest_follower = self.followers_and_following.latest_follower()
-        no_of_following = self.followers_and_following.no_of_following()
-        earliest_following = self.followers_and_following.earliest_following()
-        latest_following = self.followers_and_following.latest_following()
+        earliest_follower = 0
+        # earliest_follower = self.followers_and_following.earliest_follower()
+        # latest_follower = self.followers_and_following.latest_follower()
+        # no_of_following = self.followers_and_following.no_of_following()
+        # earliest_following = self.followers_and_following.earliest_following()
+        # latest_following = self.followers_and_following.latest_following()
 
         return {
             'ads_topics_viewsership' : {
@@ -113,10 +114,10 @@ class DataAnalyzer:
                 'close_friends': close_friends,
                 'no_of_followers': no_of_followers,
                 'earliest_follower': earliest_follower,
-                'latest_follower': latest_follower,
-                'no_of_following': no_of_following,
-                'earliest_following': earliest_following,
-                'latest_following': latest_following
+            #     'latest_follower': latest_follower,
+            #     'no_of_following': no_of_following,
+            #     'earliest_following': earliest_following,
+            #     'latest_following': latest_following
             }
         }
 
